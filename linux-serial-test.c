@@ -73,6 +73,7 @@ int _cl_tx_timeout_ms = 2000;
 int _cl_error_on_timeout = 0;
 int _cl_no_icount = 0;
 int _cl_flush_buffers = 0;
+int _cl_initiate_tx = 0;
 
 // Module variables
 unsigned char _write_count_value = 0;
@@ -304,6 +305,8 @@ static void display_help(void)
 			"  -P, --parity             Use parity bit (odd, even, mark, space)\n"
 			"  -k, --loopback           Use internal hardware loop back\n"
 			"  -K, --write-follow       Write follows the read count (can be used for multi-serial loopback)\n"
+			"  -F, --initiate-tx	    Initiate the first transmission when write-follow is used. Required if write-follow\n"
+			"			    is used on both devices in a point-to-point exchange\n"
 			"  -e, --dump-err           Display errors\n"
 			"  -r, --no-rx              Don't receive data (can be used to test flow control)\n"
 			"                           when serial driver buffer is full\n"
@@ -354,6 +357,7 @@ static void process_options(int argc, char * argv[])
 			{"parity", required_argument, 0, 'P'},
 			{"loopback", no_argument, 0, 'k'},
 			{"write-follows", no_argument, 0, 'K'},
+			{"initiate-tx", no_argument, 0, 'F'},
 			{"dump-err", no_argument, 0, 'e'},
 			{"no-rx", no_argument, 0, 'r'},
 			{"no-tx", no_argument, 0, 't'},
@@ -440,6 +444,9 @@ static void process_options(int argc, char * argv[])
 			break;
 		case 'K':
 			_cl_write_after_read = 1;
+			break;
+		case 'F':
+			_cl_initiate_tx = 1;
 			break;
 		case 'e':
 			_cl_dump_err = 1;
@@ -601,6 +608,8 @@ static void process_write_data(void)
 	do
 	{
 		if (_cl_write_after_read == 0) {
+			actual_write_size = _write_size;
+		} else if (_cl_initiate_tx == 1 && _read_count == _write_count) {
 			actual_write_size = _write_size;
 		} else {
 			actual_write_size = _read_count > _write_count ? _read_count - _write_count : 0;

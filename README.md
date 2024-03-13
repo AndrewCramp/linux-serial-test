@@ -35,6 +35,8 @@ Usage: linux-serial-test [OPTION]
   -P, --parity             Use parity bit (odd, even, mark, space)
   -k, --loopback           Use internal hardware loop back
   -K, --write-follow       Write follows the read count (can be used for multi-serial loopback)
+  -F, --initiate-tx	   Initiate the first transmission when write-follow is used. Required if write-follow
+                           is used on both devices in a point-to-point exchange
   -e, --dump-err           Display errors
   -r, --no-rx              Don't receive data (can be used to test flow control)
                            when serial driver buffer is full
