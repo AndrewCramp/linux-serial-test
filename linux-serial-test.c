@@ -72,6 +72,7 @@ int _cl_tx_timeout_ms = 2000;
 int _cl_error_on_timeout = 0;
 int _cl_no_icount = 0;
 int _cl_flush_buffers = 0;
+int _cl_force_first = 0;
 
 // Module variables
 unsigned char _write_count_value = 0;
@@ -325,6 +326,7 @@ static void display_help(void)
 			"  -Z, --error-on-timeout   Treat timeouts as errors\n"
 			"  -n, --no-icount          Do not request driver for counts of input serial line interrupts (TIOCGICOUNT)\n"
 			"  -f, --flush-buffers      Flush RX and TX buffers before starting\n"
+			"  -F, --force-first	    Force first transmission regardless of write-follow\n"
 			"\n"
 		);
 }
@@ -351,6 +353,7 @@ static void process_options(int argc, char * argv[])
 			{"parity", required_argument, 0, 'P'},
 			{"loopback", no_argument, 0, 'k'},
 			{"write-follows", no_argument, 0, 'K'},
+			{"force-first", no_argument, 0, 'F'},
 			{"dump-err", no_argument, 0, 'e'},
 			{"no-rx", no_argument, 0, 'r'},
 			{"no-tx", no_argument, 0, 't'},
@@ -436,6 +439,9 @@ static void process_options(int argc, char * argv[])
 			break;
 		case 'K':
 			_cl_write_after_read = 1;
+			break;
+		case 'F':
+			_cl_force_first = 1;
 			break;
 		case 'e':
 			_cl_dump_err = 1;
@@ -540,7 +546,7 @@ static void process_read_data(void)
 {
 	unsigned char rb[1024];
 	int actual_read_count = 0;
-	while (actual_read_count < 1024) {
+	while (actual_read_count < _write_size) {
 		int c = read(_fd, &rb, sizeof(rb));
 		if (c > 0) {
 			if (_cl_rx_dump) {
@@ -592,6 +598,8 @@ static void process_write_data(void)
 	do
 	{
 		if (_cl_write_after_read == 0) {
+			actual_write_size = _write_size;
+		} else if (_cl_force_first == 1 && _read_count == _write_count) {
 			actual_write_size = _write_size;
 		} else {
 			actual_write_size = _read_count > _write_count ? _read_count - _write_count : 0;
